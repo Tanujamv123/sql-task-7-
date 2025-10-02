@@ -1,0 +1,551 @@
+CREATE TABLE Category (
+    CategoryID INTEGER PRIMARY KEY AUTOINCREMENT,
+    CategoryName TEXT NOT NULL
+);
+-- Table: Author
+CREATE TABLE Author (
+    AuthorID INTEGER PRIMARY KEY AUTOINCREMENT,
+    AuthorName TEXT NOT NULL
+);
+-- Table: Book
+CREATE TABLE Book (
+    BookID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT NOT NULL,
+    ISBN TEXT UNIQUE,
+    CategoryID INTEGER,
+    FOREIGN KEY (CategoryID) REFERENCES Category(CategoryID)
+);
+-- Table: BookAuthor (Many-to-Many between Book and Author)
+CREATE TABLE BookAuthor (
+    BookID INTEGER,
+    AuthorID INTEGER,
+    PRIMARY KEY (BookID, AuthorID),
+    FOREIGN KEY (BookID) REFERENCES Book(BookID),
+    FOREIGN KEY (AuthorID) REFERENCES Author(AuthorID)
+);
+
+CREATE TABLE Member (
+    MemberID INTEGER PRIMARY KEY AUTOINCREMENT,
+    FirstName TEXT,
+    LastName TEXT,
+    Email TEXT UNIQUE,
+    Phone TEXT
+);
+-- Table: Loan1
+CREATE TABLE Loan1 (
+    LoanID INTEGER PRIMARY KEY AUTOINCREMENT,
+    BookID INTEGER,
+    MemberID INTEGER,
+    LoanDate DATE NOT NULL,
+    ReturnDate DATE,
+    FOREIGN KEY (BookID) REFERENCES Book(BookID),
+    FOREIGN KEY (MemberID) REFERENCES Member(MemberID)
+);
+-- ==========================================
+-- 3. INSERT STATEMENTS (Populating Database)
+-- Rule 1: Always use INSERT INTO
+-- Rule 2: Use NULL where data is missing
+-- ==========================================
+
+-- Insert Categories
+INSERT INTO Category (CategoryName) VALUES ('Fiction');
+INSERT INTO Category (CategoryName) VALUES ('Science');
+INSERT INTO Category (CategoryName) VALUES ('History');
+select * from Category;
+INSERT INTO Category (CategoryName) VALUES ('Fiction');
+INSERT INTO Category (CategoryName) VALUES ('Science');
+
+select * from Category;
+
+-- Insert Authors
+INSERT INTO Author (AuthorName) VALUES ('J.K. Rowling');
+INSERT INTO Author (AuthorName) VALUES ('Stephen Hawking');
+INSERT INTO Author (AuthorName) VALUES ('Yuval Noah Harari');
+
+-- Insert Books (if ISBN missing → NULL)
+INSERT INTO Book (Title, ISBN, CategoryID)
+VALUES ('Harry Potter and the Philosopher''s Stone', '9780747532699', 1);
+
+select * from Author;
+
+select * from book;
+INSERT INTO Book (Title, ISBN, CategoryID)
+VALUES ('Sapiens: A Brief History of Humankind', NULL, 3);
+select * from book;
+-- Insert BookAuthor mappings
+INSERT INTO BookAuthor (BookID, AuthorID) VALUES (1, 1);
+INSERT INTO BookAuthor (BookID, AuthorID) VALUES (2, 2);
+INSERT INTO BookAuthor (BookID, AuthorID) VALUES (3, 3);
+
+select * from BookAuthor;
+
+-- Insert Members (Phone missing → NULL)
+INSERT INTO Member (FirstName, LastName, Email, Phone)
+VALUES ('Alice', 'Johnson', 'alice@example.com', NULL);
+INSERT INTO Member (FirstName, LastName, Email, Phone)
+VALUES ('Bob', 'Smith', 'bob@example.com', '8765432109');
+
+-- Insert Loans (ReturnDate missing → NULL)
+INSERT INTO Loan1 (BookID, MemberID, LoanDate, ReturnDate)
+VALUES (1, 1, '2025-09-01', NULL);
+INSERT INTO Loan1 (BookID, MemberID, LoanDate, ReturnDate)
+VALUES (2, 2, '2025-09-05', '2025-09-15');
+select * from Member;
+select * from Loan1;
+
+select * from Category;
+select * from Author;
+select * from book;
+select * from BookAuthor;
+select * from member;
+select * from Loan1;
+
+-- 4. UPDATE STATEMENTS (With WHERE)
+
+-- Change Sapiens category to Science
+UPDATE Book
+SET CategoryID = 2
+WHERE Title = 'Sapiens: A Brief History of Humankind';
+select * from book;
+
+-- Update Alice's phone only if it is NULL
+UPDATE Member
+SET Phone = '9876543210'
+WHERE MemberID = 1 AND Phone IS NULL;
+select * from Member;
+
+-- Mark loan as returned only if still NULL
+UPDATE Loan1
+SET ReturnDate = '2025-09-20'
+WHERE LoanID = 1 AND ReturnDate IS NULL;
+select * from Loan1;
+-- ==========================================
+--  DELETE STATEMENTS (With WHERE)
+-- ==========================================
+
+-- Delete a specific loan record
+DELETE FROM Loan1
+WHERE LoanID = 2;
+select * from Loan1;
+
+-- Delete Sapiens book (remove from BookAuthor first due to FK constraint)
+DELETE FROM BookAuthor WHERE BookID = 3;
+-- Delete Sapiens book (remove from BookAuthor first due to FK constraint)
+
+DELETE FROM Book WHERE BookID = 3;
+select * from Book;
+
+-- Delete member only if they have no active loans
+DELETE FROM Member
+WHERE MemberID = 2
+AND MemberID NOT IN (SELECT MemberID FROM Loan1 WHERE ReturnDate IS NULL);
+
+select * from member;
+
+-- ==========================================
+-- SELECT * and Specific Columns
+-- ==========================================
+-- Select all books
+SELECT * FROM Book;
+
+-- Select only Title and ISBN from Book table
+SELECT Title, ISBN FROM Book;
+
+-- Select all members
+SELECT * FROM Member;
+
+-- Select only FirstName, LastName, Email from Member table
+SELECT FirstName, LastName, Email FROM Member;
+
+-- ==========================================
+-- WHERE, AND, OR, LIKE, BETWEEN
+-- ==========================================
+-- Books that belong to Science category (CategoryID = 2)
+SELECT * FROM Book
+WHERE CategoryID = 2;
+
+-- Books that are Fiction (CategoryID = 1) AND have ISBN
+SELECT * FROM Book
+WHERE CategoryID = 1 AND ISBN IS NOT NULL;
+
+
+-- Members with email 'alice@example.com' OR phone starting with 87
+SELECT * FROM Member
+WHERE Email = 'alice@example.com' OR Phone LIKE '87%';
+
+
+
+-- Books where title contains 'Harry'
+SELECT * FROM Book
+WHERE Title LIKE '%Harry%';
+
+-- Members whose last name starts with 'S'
+SELECT * FROM Member
+WHERE LastName LIKE 'S%';
+
+-- Loans between 2025-09-01 and 2025-09-10
+SELECT * FROM Loan1
+WHERE LoanDate BETWEEN '2025-09-01' AND '2025-09-10';
+
+-- ==========================================
+-- ORDER BY (Sorting)
+-- ==========================================
+-- List books ordered by Title A→Z
+SELECT * FROM Book
+ORDER BY Title ASC;
+
+-- List members ordered by LastName Z→A
+SELECT FirstName, LastName, Email
+FROM Member
+ORDER BY LastName DESC;
+
+-- List loans ordered by most recent first
+SELECT LoanID, BookID, MemberID, LoanDate, ReturnDate
+FROM Loan1
+ORDER BY LoanDate DESC;
+
+-- ==========================================
+-- LIMIT (Restrict number of results)
+-- ==========================================
+-- Show only 2 books
+SELECT * FROM Book
+ORDER BY Title ASC
+LIMIT 2;
+
+-- Show top 1 most recent loan
+SELECT * FROM Loan1
+ORDER BY LoanDate DESC
+LIMIT 1;
+
+-- Show first 1 member whose last name starts with 'S'
+SELECT * FROM Member
+WHERE LastName LIKE 'S%'
+LIMIT 1;
+
+
+-- ==========================================
+--  AGGREGATE FUNCTIONS & GROUPING
+-- ==========================================
+
+-- COUNT: Count number of books per category
+SELECT c.CategoryName, COUNT(b.BookID) AS TotalBooks
+FROM Category c
+LEFT JOIN Book b ON c.CategoryID = b.CategoryID
+GROUP BY c.CategoryName;
+
+-- 2. COUNT: Count how many authors contributed to each book
+SELECT b.Title, COUNT(ba.AuthorID) AS AuthorCount
+FROM Book b
+LEFT JOIN BookAuthor ba ON b.BookID = ba.BookID
+GROUP BY b.Title;
+
+--  COUNT: Number of loans per member
+SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+       COUNT(l.LoanID) AS TotalLoans
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+GROUP BY m.MemberID
+ORDER BY TotalLoans DESC;
+
+--  MIN & MAX: Find earliest and latest loan date for each member
+SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+       MIN(l.LoanDate) AS FirstLoanDate,
+       MAX(l.LoanDate) AS LastLoanDate
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+GROUP BY m.MemberID;
+
+--  AVG: Calculate average loan duration (only where ReturnDate is NOT NULL)
+SELECT AVG(julianday(l.ReturnDate) - julianday(l.LoanDate)) AS AvgLoanDays
+FROM Loan1 l
+WHERE l.ReturnDate IS NOT NULL;
+
+--  GROUP BY + HAVING: Show only categories that have more than 1 book
+SELECT c.CategoryName, COUNT(b.BookID) AS TotalBooks
+FROM Category c
+LEFT JOIN Book b ON c.CategoryID = b.CategoryID
+GROUP BY c.CategoryName
+HAVING COUNT(b.BookID) > 1;
+
+-- . GROUP BY + HAVING: Show members who borrowed more than 1 book
+SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+       COUNT(l.LoanID) AS TotalLoans
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+GROUP BY m.MemberID
+HAVING COUNT(l.LoanID) > 1;
+
+-- . COUNT with Filter: Count how many books still on loan (ReturnDate IS NULL)
+SELECT COUNT(*) AS ActiveLoans
+FROM Loan1
+WHERE ReturnDate IS NULL;
+
+
+--Joins--
+--inner join-Returns rows only where a match exists in both tables--
+SELECT b.BookID, b.Title, c.CategoryName
+FROM Book b
+INNER JOIN Category c ON b.CategoryID = c.CategoryID;
+
+--left outer join-Returns all rows from left table, plus matching rows from right.Unmatched right rows become NULL.
+SELECT b.BookID, b.Title, c.CategoryName
+FROM Book b
+LEFT JOIN Category c ON b.CategoryID = c.CategoryID;
+
+--right outer join - since sql lite did not supported right join , simulation done by reversing the left join
+--Returns all rows from right table, plus matching rows from left.(unmatched rows beconmes null)
+SELECT c.CategoryID, c.CategoryName, b.Title
+FROM Category c
+LEFT JOIN Book b ON c.CategoryID = b.CategoryID;
+
+--full outer join- Returns all rows from both tables — matched and unmatched.
+--SQLite does not support FULL JOIN natively, so we use UNION of LEFT + RIGHT:
+SELECT c.CategoryName, b.Title
+FROM Category c
+LEFT JOIN Book b ON c.CategoryID = b.CategoryID
+UNION
+SELECT c.CategoryName, b.Title
+FROM Category c
+RIGHT JOIN Book b ON c.CategoryID = b.CategoryID;
+
+--cross join: Returns all combinations (Cartesian product).
+SELECT b.Title, m.FirstName || ' ' || m.LastName AS MemberName
+FROM Book b
+CROSS JOIN Member m;
+
+--self join:Join a table with itself
+SELECT m1.FirstName || ' ' || m1.LastName AS Member1,
+       m2.FirstName || ' ' || m2.LastName AS Member2
+FROM Member m1
+INNER JOIN Member m2 
+ON m1.LastName = m2.LastName
+AND m1.MemberID = m2.MemberID;
+
+--Natural Join : Matches columns with the same name automatically (no ON clause needed).
+SELECT *
+FROM Book
+NATURAL JOIN Category;
+
+--equi join
+--This is basically an INNER JOIN using = in the ON clause.
+SELECT b.Title, c.CategoryName
+FROM Book b, Category c
+WHERE b.CategoryID = c.CategoryID;
+
+--non equi join Uses operators other than = in join condition.
+-- Example: find loans and members where MemberID < 2
+SELECT l.LoanID, m.FirstName
+FROM Loan1 l
+JOIN Member m ON l.MemberID < 2;
+
+--self outer join ,Like a self join, but keeps unmatched rows too.
+SELECT m1.MemberID, m1.LastName, m2.MemberID AS MatchMemberID
+FROM Member m1
+LEFT JOIN Member m2
+ON m1.LastName = m2.LastName
+AND m1.MemberID <> m2.MemberID;
+
+---ANTI JOIN (NOT EXISTS / LEFT JOIN with NULL)
+--Returns rows from left table that do NOT have a match in right table.
+-- Find members who have never borrowed a book
+SELECT m.MemberID, m.FirstName
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+WHERE l.LoanID IS NULL;
+
+--SEMI JOIN (EXISTS)
+--Returns rows from left table where a match exists in right table, but without duplicates from right.
+-- Find members who have borrowed at least one book
+SELECT m.MemberID, m.FirstName
+FROM Member m
+WHERE EXISTS (SELECT 1 FROM Loan1 l WHERE l.MemberID = m.MemberID);
+
+--SELF CROSS JOIN
+
+--Special case of CROSS JOIN with same table.
+-- Generate all member pairs
+SELECT m1.FirstName AS MemberA, m2.FirstName AS MemberB
+FROM Member m1
+CROSS JOIN Member m2
+WHERE m1.MemberID <> m2.MemberID;
+
+--SUBQUERIES
+--SUBQUERIES IN SELECT
+-- Show each book with its category name using a subquery instead of a join
+SELECT 
+    b.Title,
+    (SELECT c.CategoryName 
+     FROM Category c 
+     WHERE c.CategoryID = b.CategoryID) AS CategoryName
+FROM Book b;
+
+-- Show each member with total loans (scalar subquery)
+SELECT 
+    m.FirstName || ' ' || m.LastName AS MemberName,
+    (SELECT COUNT(*) FROM Loan1 l WHERE l.MemberID = m.MemberID) AS LoanCount
+FROM Member m;
+
+--SUBQUERIES IN WHERE 
+-- Find members who borrowed at least one book (EXISTS correlated subquery)
+SELECT m.FirstName, m.LastName
+FROM Member m
+WHERE EXISTS (
+    SELECT 1 FROM Loan1 l WHERE l.MemberID = m.MemberID
+);
+
+-- Find books that have never been borrowed
+SELECT Title 
+FROM Book b
+WHERE b.BookID NOT IN (
+    SELECT l.BookID FROM Loan1 l
+);
+
+-- Find members whose total loans > average loans per member
+SELECT m.FirstName, m.LastName
+FROM Member m
+WHERE (SELECT COUNT(*) FROM Loan1 l WHERE l.MemberID = m.MemberID) >
+      (SELECT AVG(LoanCount) 
+       FROM (SELECT COUNT(*) AS LoanCount FROM Loan1 GROUP BY MemberID));
+
+--SUBQUERIES IN FROM
+-- Find top borrower using subquery in FROM
+SELECT MemberName, TotalLoans
+FROM (
+    SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+           COUNT(l.LoanID) AS TotalLoans
+    FROM Member m
+    LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+    GROUP BY m.MemberID
+) AS BorrowStats
+ORDER BY TotalLoans DESC
+LIMIT 1;
+
+-- Average loan duration per member (nested FROM subquery)
+SELECT MemberName, AVG(LoanDays) AS AvgDays
+FROM (
+    SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+           julianday(l.ReturnDate) - julianday(l.LoanDate) AS LoanDays
+    FROM Member m
+    JOIN Loan1 l ON m.MemberID = l.MemberID
+    WHERE l.ReturnDate IS NOT NULL
+) t
+GROUP BY MemberName;
+
+--SUBQUERIES WITHH IN,EXISTS,=
+-- Members who borrowed Science category books (IN subquery)
+SELECT DISTINCT m.FirstName, m.LastName
+FROM Member m
+WHERE m.MemberID IN (
+    SELECT l.MemberID
+    FROM Loan1 l
+    JOIN Book b ON l.BookID = b.BookID
+    WHERE b.CategoryID = 2
+);
+
+-- Books borrowed by Alice (scalar subquery with =)
+SELECT Title
+FROM Book
+WHERE BookID IN (
+    SELECT l.BookID
+    FROM Loan1 l
+    JOIN Member m ON l.MemberID = m.MemberID
+    WHERE m.FirstName = 'Alice'
+);
+
+-- Find categories where at least one book is borrowed (EXISTS)
+SELECT c.CategoryName
+FROM Category c
+WHERE EXISTS (
+    SELECT 1
+    FROM Book b
+    JOIN Loan1 l ON b.BookID = l.BookID
+    WHERE b.CategoryID = c.CategoryID
+);
+
+--VIEWS
+--CREATE SIMPLE VIEWS
+CREATE VIEW BookCategoryView AS
+SELECT b.BookID, b.Title, b.ISBN, c.CategoryName
+FROM Book b
+LEFT JOIN Category c ON b.CategoryID = c.CategoryID;
+SELECT * FROM BookCategoryView;
+
+--View: All Loans with Member and Book Info
+CREATE VIEW LoanDetailsView AS
+SELECT l.LoanID, b.Title AS BookTitle,
+       m.FirstName || ' ' || m.LastName AS MemberName,
+       l.LoanDate, l.ReturnDate
+FROM Loan1 l
+JOIN Book b ON l.BookID = b.BookID
+JOIN Member m ON l.MemberID = m.MemberID;
+
+SELECT * FROM LoanDetailsView ORDER BY LoanDate DESC;
+
+--Views for Abstraction
+--View: Active Loans (ReturnDate IS NULL)
+CREATE VIEW ActiveLoans AS
+SELECT l.LoanID, b.Title, m.FirstName || ' ' || m.LastName AS Borrower, l.LoanDate
+FROM Loan1 l
+JOIN Book b ON l.BookID = b.BookID
+JOIN Member m ON l.MemberID = m.MemberID
+WHERE l.ReturnDate IS NULL;
+
+SELECT * FROM ActiveLoans;
+
+--Views for Security
+--Suppose you want staff to see members’ names and emails but not phone numbers:
+CREATE VIEW MemberPublic AS
+SELECT MemberID, FirstName, LastName, Email
+FROM Member;
+
+SELECT * FROM MemberPublic;
+
+--Views with Aggregates
+--View: Loan Count per Member
+
+CREATE VIEW MemberLoanStats AS
+SELECT m.MemberID,
+       m.FirstName || ' ' || m.LastName AS MemberName,
+       COUNT(l.LoanID) AS TotalLoans
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+GROUP BY m.MemberID;
+
+SELECT * FROM MemberLoanStats ORDER BY TotalLoans DESC;
+
+--Complex View with Subquery
+--View: Top Borrower
+CREATE VIEW TopBorrower AS
+SELECT MemberName, TotalLoans
+FROM (
+    SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+           COUNT(l.LoanID) AS TotalLoans
+    FROM Member m
+    LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+    GROUP BY m.MemberID
+) t
+ORDER BY TotalLoans DESC
+LIMIT 1;
+
+SELECT * FROM TopBorrower;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
