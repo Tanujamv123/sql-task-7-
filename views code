@@ -1,0 +1,69 @@
+
+--VIEWS
+--CREATE SIMPLE VIEWS
+CREATE VIEW BookCategoryView AS
+SELECT b.BookID, b.Title, b.ISBN, c.CategoryName
+FROM Book b
+LEFT JOIN Category c ON b.CategoryID = c.CategoryID;
+SELECT * FROM BookCategoryView;
+
+--View: All Loans with Member and Book Info
+CREATE VIEW LoanDetailsView AS
+SELECT l.LoanID, b.Title AS BookTitle,
+       m.FirstName || ' ' || m.LastName AS MemberName,
+       l.LoanDate, l.ReturnDate
+FROM Loan1 l
+JOIN Book b ON l.BookID = b.BookID
+JOIN Member m ON l.MemberID = m.MemberID;
+
+SELECT * FROM LoanDetailsView ORDER BY LoanDate DESC;
+
+--Views for Abstraction
+--View: Active Loans (ReturnDate IS NULL)
+CREATE VIEW ActiveLoans AS
+SELECT l.LoanID, b.Title, m.FirstName || ' ' || m.LastName AS Borrower, l.LoanDate
+FROM Loan1 l
+JOIN Book b ON l.BookID = b.BookID
+JOIN Member m ON l.MemberID = m.MemberID
+WHERE l.ReturnDate IS NULL;
+
+SELECT * FROM ActiveLoans;
+
+--Views for Security
+--Suppose you want staff to see members’ names and emails but not phone numbers:
+CREATE VIEW MemberPublic AS
+SELECT MemberID, FirstName, LastName, Email
+FROM Member;
+
+SELECT * FROM MemberPublic;
+
+--Views with Aggregates
+--View: Loan Count per Member
+
+CREATE VIEW MemberLoanStats AS
+SELECT m.MemberID,
+       m.FirstName || ' ' || m.LastName AS MemberName,
+       COUNT(l.LoanID) AS TotalLoans
+FROM Member m
+LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+GROUP BY m.MemberID;
+
+SELECT * FROM MemberLoanStats ORDER BY TotalLoans DESC;
+
+--Complex View with Subquery
+--View: Top Borrower
+CREATE VIEW TopBorrower AS
+SELECT MemberName, TotalLoans
+FROM (
+    SELECT m.FirstName || ' ' || m.LastName AS MemberName,
+           COUNT(l.LoanID) AS TotalLoans
+    FROM Member m
+    LEFT JOIN Loan1 l ON m.MemberID = l.MemberID
+    GROUP BY m.MemberID
+) t
+ORDER BY TotalLoans DESC
+LIMIT 1;
+
+SELECT * FROM TopBorrower;
+
+
